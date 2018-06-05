@@ -8,7 +8,7 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>redis-cache-demo</name>
+	<name>redis-cache-sb</name>
 	<description>Demo project for Spring Boot</description>
 
 	<parent>

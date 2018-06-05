@@ -8,8 +8,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -19,12 +19,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @Component
-public class DealerService implements InitializingBean {
+public class DealerService {
 
     private final Logger LOG = LoggerFactory.getLogger(getClass());
 
     private final UserRepository userRepository;
 
+    @Autowired
+    CacheManager cacheManager;
+    
     @Autowired
     public DealerService(UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -45,17 +48,30 @@ public class DealerService implements InitializingBean {
         return users; //userRepository.findAll();
     }
 
+    public List<User> getUsers() {
+        LOG.info("############ Getting all users.");
+        //
+        List<User> users = new ArrayList<>();
+        User shubham = new User("Shubham", 2000);
+        shubham.setId(Long.valueOf(1));
+        users.add(shubham);
+        User pankaj = new User("Pankaj", 29000);
+        pankaj.setId(Long.valueOf(2));        
+        users.add(pankaj);
+        User lewis = new User("Lewis", 550);
+        lewis.setId(Long.valueOf(3));        
+        users.add(lewis);
+        //
+        return users;
+    }
+    
+    
     @Cacheable(value = "users", key = "#userId")
     public User getUser(@PathVariable String userId) {
         LOG.info("Getting user with ID {}.", userId);
         return userRepository.findOne(Long.valueOf(userId));
     }
     
-    @Cacheable(value = "users", key = "#userId")
-    public User getTheUser(@PathVariable String userId) {
-        LOG.info("Getting user with ID {}.", userId);
-        return userRepository.findOne(Long.valueOf(userId));
-    }
 
     @CachePut(value = "users", key = "#user.id")
     public User updatePersonByID(@RequestBody User user) {
@@ -81,26 +97,19 @@ public class DealerService implements InitializingBean {
         userRepository.save(lewis);
         LOG.info("Done saving users. Data: {}.", userRepository.findAll());
     }
-/*
+
     @PostConstruct
     public void init() {
-        //
-        populatingDB();        
-        //
-        getAllUsers();
-        LOG.info("############ Inside init method");
+        LOG.info("############ Inside init method");        
+        
+        List<User> results = getUsers();
+        results.forEach(user -> 
+            cacheManager.getCache("users").put(user.getName(), user));
+        
     }
 
     @PreDestroy
     public void destroy() {
         LOG.info("############ Inside destroy method");
-    }
-*/
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        populatingDB();        
-        //
-        getAllUsers();
-        
     }
 }
